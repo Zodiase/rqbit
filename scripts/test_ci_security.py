@@ -25,6 +25,13 @@ class SecurityTests(unittest.TestCase):
                     self.assertIn("--ignore-scripts", line)
         self.assertNotIn("Command", (ROOT / "crates/librqbit/build.rs").read_text())
 
+    def test_checkout_does_not_persist_credentials(self):
+        for workflow in (ROOT / ".github/workflows").glob("*.yml"):
+            steps = re.split(r"(?m)^      - ", workflow.read_text())
+            for step in steps:
+                if step.startswith("uses: actions/checkout@"):
+                    self.assertRegex(step, r"persist-credentials:\s*false\b")
+
     def test_rust_asset_check(self):
         with tempfile.TemporaryDirectory() as directory:
             cwd = Path(directory)

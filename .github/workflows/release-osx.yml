@@ -13,6 +13,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Install Binstall
         uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # main

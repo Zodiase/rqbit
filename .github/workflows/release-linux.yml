@@ -21,6 +21,8 @@ jobs:
             arch: arm64
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Install tauri dependencies
         run: |
@@ -69,6 +71,8 @@ jobs:
         platform: [linux/arm/v7, linux/amd64, linux/arm64]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -143,6 +147,8 @@ jobs:
     needs: build-docker-cross
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Docker meta
         id: meta
