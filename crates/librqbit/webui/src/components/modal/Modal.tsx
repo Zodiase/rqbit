@@ -1,4 +1,4 @@
-// Modal.tsx
+/** Shared modal shell delegates focus trapping and restoration to Restart UI. */
 import React, { type ReactNode } from "react";
 import RestartModal from "@restart/ui/Modal";
 import { BsX } from "react-icons/bs";
@@ -6,6 +6,7 @@ import { BsX } from "react-icons/bs";
 interface ModalProps {
   isOpen: boolean;
   onClose?: () => void;
+  onShow?: () => void;
   title: string;
   children: ReactNode;
   className?: string;
@@ -37,6 +38,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   className,
+  onShow,
 }) => {
   const renderBackdrop = () => {
     return (
@@ -47,6 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
     <RestartModal
       show={isOpen}
       onHide={onClose}
+      onShow={onShow}
       renderBackdrop={renderBackdrop}
       className="fixed z-301 top-0 left-0 w-full h-full block overflow-x-hidden overflow-y-auto"
     >

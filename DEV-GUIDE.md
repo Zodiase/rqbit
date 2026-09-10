@@ -74,3 +74,33 @@ To update an action pin:
 
 These tests parse YAML, but do not fully parse shell programs or audit dependency
 code. Their policy checks are regression guardrails, not a sandbox.
+
+## Keyboard deletion smoke check
+
+Use `npm run dev:mock --workspace rqbit-webui` for fake torrents, not a live
+session. This is a manual/browser-automation recipe, not an automated CI suite;
+frontend test infrastructure is tracked in fork issue #6.
+
+1. In compact view, select a row or its checkbox and press Delete (Backspace on
+   a Mac keyboard also works). Confirm the dialog lists the intended selection
+   and focuses its Delete button. Opening the dialog must not remove anything.
+2. Press Enter and verify the selected mock torrent disappears. Repeat with
+   two selected torrents. Tab to Cancel and press Enter to verify normal button
+   activation remains intact.
+3. Check "Also delete downloaded files", then cancel with Escape or the close
+   button. Reopen and verify the option is unchecked. Default confirmation must
+   use the forget operation, not file deletion.
+4. Type in Search and press Backspace/Delete; no confirmation should open.
+   Repeat with an unrelated modal open. Held/repeated keys must not reopen or
+   repeatedly submit a confirmation.
+5. While deletion is pending, repeat Enter/clicks. Only one batch should run;
+   dismissal and changing the file-deletion option are blocked until it settles.
+   Verify API errors remain visible and allow retry.
+
+The confirmation is a native form: Delete is a submit button and Cancel is a
+non-submit button. The form submit handler prevents navigation and invokes the
+guarded deletion operation; no modal-specific Enter listener is needed.
+The shared modal uses Restart UI's show lifecycle to focus the confirmation
+after mounting; React autofocus alone can be overridden by the modal container.
+Verify the same keyboard flow in the packaged macOS app before treating native
+behavior as tested. Browser checks do not establish native WebView behavior.
