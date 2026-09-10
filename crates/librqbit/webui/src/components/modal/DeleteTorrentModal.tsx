@@ -1,4 +1,8 @@
-import { useContext, useState } from "react";
+/**
+ * Confirm removal of a stable torrent selection, with optional file deletion.
+ * Keep keyboard activation and dismissal on the same guarded paths as clicks.
+ */
+import { useContext, useRef, useState } from "react";
 import { TorrentListItem } from "../../api-types";
 import { APIContext } from "../../context";
 import { ErrorWithLabel } from "../../rqbit-web";
@@ -19,6 +23,8 @@ export const DeleteTorrentModal: React.FC<{
   const [deleteFiles, setDeleteFiles] = useState(false);
   const [error, setError] = useState<ErrorWithLabel | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deletingRef = useRef(false);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
   const API = useContext(APIContext);
   const refreshTorrents = useTorrentStore((state) => state.refreshTorrents);
@@ -29,6 +35,7 @@ export const DeleteTorrentModal: React.FC<{
   }
 
   const close = () => {
+    if (deletingRef.current) return;
     setDeleteFiles(false);
     setError(null);
     setDeleting(false);
@@ -36,6 +43,9 @@ export const DeleteTorrentModal: React.FC<{
   };
 
   const deleteTorrents = async () => {
+    // A ref closes the gap before React renders the disabled button.
+    if (deletingRef.current) return;
+    deletingRef.current = true;
     setDeleting(true);
     setError(null);
 
@@ -51,6 +61,7 @@ export const DeleteTorrentModal: React.FC<{
       }
     }
 
+    deletingRef.current = false;
     if (errors.length > 0) {
       setError({
         text: `Failed to delete ${errors.length} torrent${errors.length > 1 ? "s" : ""}`,
@@ -70,62 +81,85 @@ export const DeleteTorrentModal: React.FC<{
     : "Delete torrent";
 
   return (
-    <Modal isOpen={show} onClose={onHide} title={title}>
-      <ModalBody>
-        <p className="text-gray-700 dark:text-slate-300 mb-3">
-          {isBulk
-            ? "Are you sure you want to delete the following torrents?"
-            : "Are you sure you want to delete this torrent?"}
-        </p>
+    <Modal
+      isOpen={show}
+      onClose={close}
+      onShow={() => confirmRef.current?.focus()}
+      title={title}
+    >
+      <div
+        onKeyDown={(event) => {
+          // Holding Enter must not activate a newly opened confirmation.
+          if (
+            event.key === "Enter" &&
+            (event.repeat || event.nativeEvent.isComposing)
+          ) {
+            event.preventDefault();
+          }
+        }}
+      >
+        <ModalBody>
+          <p className="text-gray-700 dark:text-slate-300 mb-3">
+            {isBulk
+              ? "Are you sure you want to delete the following torrents?"
+              : "Are you sure you want to delete this torrent?"}
+          </p>
 
-        <div
-          className={`rounded-md bg-gray-50 dark:bg-slate-700/50 p-3 ${
-            isBulk ? "max-h-48 overflow-y-auto" : ""
-          }`}
-        >
-          <ul className="space-y-1">
-            {torrents.map((torrent) => (
-              <li
-                key={torrent.id}
-                className="text-gray-800 dark:text-slate-200 truncate"
-                title={torrent.name ?? undefined}
-              >
-                <span className="font-medium">
-                  {torrent.name || `Torrent #${torrent.id}`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-4 flex items-center">
-          <input
-            type="checkbox"
-            id="deleteFiles"
-            className="form-checkbox h-4 w-4 text-blue-500 rounded border-gray-300 dark:border-slate-600"
-            onChange={() => setDeleteFiles(!deleteFiles)}
-            checked={deleteFiles}
-          />
-          <label
-            htmlFor="deleteFiles"
-            className="ml-2 text-gray-700 dark:text-slate-300"
+          <div
+            className={`rounded-md bg-gray-50 dark:bg-slate-700/50 p-3 ${
+              isBulk ? "max-h-48 overflow-y-auto" : ""
+            }`}
           >
-            Also delete downloaded files
-          </label>
-        </div>
+            <ul className="space-y-1">
+              {torrents.map((torrent) => (
+                <li
+                  key={torrent.id}
+                  className="text-gray-800 dark:text-slate-200 truncate"
+                  title={torrent.name ?? undefined}
+                >
+                  <span className="font-medium">
+                    {torrent.name || `Torrent #${torrent.id}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {error && <ErrorComponent error={error} />}
-      </ModalBody>
+          <div className="mt-4 flex items-center">
+            <input
+              type="checkbox"
+              id="deleteFiles"
+              className="form-checkbox h-4 w-4 text-blue-500 rounded border-gray-300 dark:border-slate-600"
+              onChange={() => setDeleteFiles(!deleteFiles)}
+              checked={deleteFiles}
+              disabled={deleting}
+            />
+            <label
+              htmlFor="deleteFiles"
+              className="ml-2 text-gray-700 dark:text-slate-300"
+            >
+              Also delete downloaded files
+            </label>
+          </div>
 
-      <ModalFooter>
-        {deleting && <Spinner />}
-        <Button variant="cancel" onClick={close}>
-          Cancel
-        </Button>
-        <Button variant="danger" onClick={deleteTorrents} disabled={deleting}>
-          {isBulk ? `Delete ${torrents.length} Torrents` : "Delete Torrent"}
-        </Button>
-      </ModalFooter>
+          {error && <ErrorComponent error={error} />}
+        </ModalBody>
+
+        <ModalFooter>
+          {deleting && <Spinner />}
+          <Button variant="cancel" onClick={close} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={deleteTorrents}
+            disabled={deleting}
+            ref={confirmRef}
+          >
+            {isBulk ? `Delete ${torrents.length} Torrents` : "Delete Torrent"}
+          </Button>
+        </ModalFooter>
+      </div>
     </Modal>
   );
 };

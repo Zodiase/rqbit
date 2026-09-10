@@ -1,3 +1,4 @@
+/** Compact-view shortcuts respect editable controls and modal ownership of focus. */
 import { useEffect } from "react";
 import { useUIStore } from "../stores/uiStore";
 import { useTorrentStore } from "../stores/torrentStore";
@@ -21,11 +22,14 @@ export function useKeyboardShortcuts(actions?: KeyboardShortcutActions) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing || e.repeat) return;
       // Ignore if user is typing in an input field
       const target = e.target as HTMLElement;
       if (
-        target.tagName === "INPUT" ||
+        (target.tagName === "INPUT" &&
+          !target.matches('input[type="checkbox"], input[type="radio"]')) ||
         target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
         target.isContentEditable
       ) {
         return;
@@ -72,6 +76,9 @@ export function useKeyboardShortcuts(actions?: KeyboardShortcutActions) {
       // Delete/Backspace: Open delete modal for selected torrents
       if (
         (e.key === "Delete" || e.key === "Backspace") &&
+        !isMod &&
+        !e.altKey &&
+        !e.shiftKey &&
         selectedTorrentIds.size > 0
       ) {
         e.preventDefault();

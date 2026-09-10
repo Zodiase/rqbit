@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+/** Shared action button styling and native interaction props for the web UI. */
+import { ReactNode, Ref } from "react";
 
 export const Button: React.FC<{
   onClick: () => void;
@@ -6,8 +7,9 @@ export const Button: React.FC<{
   size?: "sm" | "default";
   className?: string;
   disabled?: boolean;
+  ref?: Ref<HTMLButtonElement>;
   children: ReactNode;
-}> = ({ onClick, children, className, disabled, variant, size }) => {
+}> = ({ onClick, children, className, disabled, ref, variant, size }) => {
   const sizeClassNames = {
     sm: "text-sm px-2 py-1",
     default: "px-3 py-1.5",
@@ -27,6 +29,7 @@ export const Button: React.FC<{
 
   return (
     <button
+      ref={ref}
       disabled={disabled}
       onClick={(e) => {
         e.preventDefault();
