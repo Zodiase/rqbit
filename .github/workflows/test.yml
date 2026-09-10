@@ -3,7 +3,7 @@ name: Run tests
 on:
   workflow_dispatch:
   push:
-    branches: ["**"]
+    branches: [main, dev]
   pull_request:
     branches: [main]
 
@@ -17,12 +17,14 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build --workspace rqbit-webui
       - run: npm run build --workspace rqbit
 
@@ -36,14 +38,30 @@ jobs:
         run: |
           rustup toolchain install ${{ matrix.rust_version }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - run: rustup override set ${{ matrix.rust_version }}
 
       - run: rustup component add rustfmt clippy
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build --workspace rqbit-webui
+
+      - name: CI security regression checks
+        run: python3 scripts/test_ci_security.py
+
       - name: cargo check
         run: cargo check
+
+      - name: Verify packaged web UI
+        if: matrix.rust_version == '1.94'
+        run: cargo package -p librqbit --allow-dirty --features webui,http-api,tracing-subscriber-utils
 
       - name: fmt check
         run: cargo fmt --all -- --check
@@ -57,11 +75,20 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - run: rustup toolchain install stable --profile minimal
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build --workspace rqbit-webui
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           prefix-key: v1
 

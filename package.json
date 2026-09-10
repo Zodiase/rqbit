@@ -10,6 +10,7 @@
     "format:check": "prettier --check 'desktop/src/**/*.{ts,tsx}' 'crates/librqbit/webui/src/**/*.{ts,tsx}'"
   },
   "devDependencies": {
+    "js-yaml": "4.3.2",
     "prettier": "^3.7"
   }
 }
