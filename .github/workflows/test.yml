@@ -59,6 +59,10 @@ jobs:
       - name: cargo check
         run: cargo check
 
+      - name: Verify packaged web UI
+        if: matrix.rust_version == '1.94'
+        run: cargo package -p librqbit --allow-dirty --features webui,http-api,tracing-subscriber-utils
+
       - name: fmt check
         run: cargo fmt --all -- --check
 

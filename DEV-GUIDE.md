@@ -40,7 +40,16 @@ Run tauri dev
 
 ## CI hardening checks
 
+Before packaging or publishing `librqbit`, run `make webui-build`. The crate
+explicitly includes the four generated web assets, not node_modules or frontend
+source. Packaging without these assets is not supported for webui consumers.
+The security tests inspect Cargo's package file list, execute its asset-checking
+build script, and compile include_str checks against those selected assets in an
+isolated directory. This focused check does not replace a full packaged-crate
+build, which also requires published sibling dependencies.
+
     npm ci --ignore-scripts
+    npm run build --workspace rqbit-webui
     python3 scripts/test_ci_security.py
 
 Actions use full commit pins, with the original reference retained as a comment.

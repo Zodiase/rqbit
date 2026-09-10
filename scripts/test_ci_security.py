@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -48,6 +49,34 @@ def valid_reference(ref):
 
 
 class SecurityTests(unittest.TestCase):
+    def test_packaged_web_assets(self):
+        result = subprocess.run(
+            ["cargo", "package", "-p", "librqbit", "--list", "--offline", "--allow-dirty"],
+            cwd=ROOT, capture_output=True, text=True, check=True, timeout=60)
+        selected = set(result.stdout.splitlines())
+        assets = ["webui/dist/index.html", "webui/dist/assets/index.js",
+                  "webui/dist/assets/index.css", "webui/dist/assets/logo.svg"]
+        for asset in assets:
+            self.assertIn(asset, selected)
+        self.assertFalse(any("node_modules/" in path for path in selected))
+        # Recreate the package-selected embedding inputs, with no checkout fallback.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in [*assets, "build.rs"]:
+                destination = root / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / "crates/librqbit" / name, destination)
+            binary = root / ("build-check.exe" if os.name == "nt" else "build-check")
+            subprocess.run(["rustc", "--edition=2024", "--cfg", 'feature="webui"',
+                            str(root / "build.rs"), "-o", str(binary)],
+                           check=True, timeout=60)
+            subprocess.run([str(binary)], cwd=root, check=True, capture_output=True, timeout=10)
+            source = root / "embed.rs"
+            source.write_text("\n".join(
+                f'const _: &str = include_str!("{asset}");' for asset in assets))
+            subprocess.run(["rustc", "--edition=2024", "--crate-type=lib", str(source),
+                            "-o", str(root / "embed.rlib")], check=True, timeout=60)
+
     def test_action_references_are_pinned(self):
         for workflow, document in workflows():
             refs = list(values_for(document, "uses"))
