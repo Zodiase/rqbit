@@ -1,3 +1,38 @@
+# rqbit - personal fork
+
+This is [Zodiase's personal fork](https://github.com/Zodiase/rqbit) of
+[ikatson/rqbit](https://github.com/ikatson/rqbit). It exists to fix bugs and adapt
+the app to the maintainer's own downloading workflows, with macOS as the primary
+daily-use platform.
+
+## What to expect from this fork
+
+- **Personal use drives development.** Features, fixes, and priorities follow the
+  maintainer's needs. There is no promised release schedule, support commitment,
+  or roadmap for general-purpose use.
+- **Development will be heavily AI-assisted.** Expect substantial code,
+  documentation, tests, and maintenance work to be produced with AI tools. This
+  is an explicit development choice, not a claim that changes are independently
+  audited or free of defects.
+- **There is no short-term plan to contribute changes upstream.** Changes will
+  be maintained here for personal use. Upstream contributions may be considered
+  later, but are not a current commitment.
+- **This fork may diverge from upstream.** Upstream updates may be incorporated
+  as needed; compatibility and feature parity are not guaranteed.
+
+The original project and its contributors deserve credit for rqbit. This fork
+is maintained independently; its changes and development practices do not
+represent upstream. Please direct questions about fork-specific behavior to
+this repository.
+
+## Upstream documentation
+
+The documentation below is retained from upstream. Package badges, published
+packages, release links, and sponsorship links refer to the upstream project
+unless explicitly stated otherwise; they do not distribute or describe this
+fork's changes. Upstream contribution policies apply when submitting work to
+upstream, including any future contributions from this fork.
+
 [![crates.io](https://img.shields.io/crates/v/rqbit.svg)](https://crates.io/crates/rqbit)
 [![crates.io](https://img.shields.io/crates/v/librqbit.svg)](https://crates.io/crates/librqbit)
 [![docs.rs](https://img.shields.io/docsrs/librqbit.svg)](https://docs.rs/librqbit/latest/librqbit/)
