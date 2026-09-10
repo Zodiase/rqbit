@@ -25,6 +25,7 @@
       {
         "fullscreen": false,
         "resizable": true,
+        "dragDropEnabled": false,
         "title": "rqbit",
         "width": 1024,
         "height": 600
