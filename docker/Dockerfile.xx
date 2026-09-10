@@ -12,6 +12,8 @@ RUN xx-apk add gcc musl-dev openssl-dev openssl-libs-static
 COPY / /src/
 WORKDIR /src/
 
+RUN npm ci --ignore-scripts && npm run build --workspace rqbit-webui
+
 ENV PROFILE_NAME=release-github
 ENV PROFILE_FOLDER=release-github
 
