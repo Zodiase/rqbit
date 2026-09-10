@@ -12,27 +12,26 @@ jobs:
   release-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Binstall
-        uses: cargo-bins/cargo-binstall@main
+        uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # main
 
       - name: install Tauri
         run: cargo binstall tauri-cli --no-confirm
 
-      - name: npm install (desktop)
-        working-directory: desktop
-        run: npm install
-
-      - name: npm install (librqbit/webui)
-        working-directory: crates/librqbit/webui
-        run: npm install
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build --workspace rqbit-webui
 
       - name: cargo tauri build
         working-directory: desktop
         run: cargo tauri build --ci
 
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           generate_release_notes: true
           draft: true
@@ -42,7 +41,7 @@ jobs:
       - name: Build release
         run: cargo build --profile release-github
 
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           generate_release_notes: true
           draft: true

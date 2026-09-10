@@ -2,8 +2,11 @@ all:
 
 @PHONY: webui-deps
 webui-deps:
-	cd desktop && npm install
-	cd crates/librqbit/webui && npm install
+	npm ci --ignore-scripts
+
+.PHONY: webui-build
+webui-build: webui-deps
+	npm run build --workspace rqbit-webui
 
 @PHONY: webui-dev
 webui-dev: webui-deps
