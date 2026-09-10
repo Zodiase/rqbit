@@ -1326,7 +1326,7 @@ impl Session {
         let (managed_torrent, metadata) = {
             let mut g = self.db.write();
             if let Some((id, handle)) = g.torrents.iter().find_map(|(eid, t)| {
-                if t.info_hash() == info_hash || *eid == id {
+                if t.info_hash() == info_hash {
                     Some((*eid, t.clone()))
                 } else {
                     None
@@ -1334,6 +1334,10 @@ impl Session {
             }) {
                 return Ok(AddTorrentResponse::AlreadyManaged(id, handle));
             }
+            anyhow::ensure!(
+                !g.torrents.contains_key(&id),
+                "torrent ID {id} is already in use by a different torrent"
+            );
 
             let span = debug_span!(parent: self.rs(), "torrent", id);
             let peer_opts = self.merge_peer_opts(opts.peer_opts);

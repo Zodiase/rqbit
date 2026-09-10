@@ -1,4 +1,9 @@
-use std::{any::TypeId, collections::HashMap, path::PathBuf};
+use std::{
+    any::TypeId,
+    collections::HashMap,
+    path::PathBuf,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::{
     api::TorrentIdOrHash,
@@ -31,6 +36,7 @@ pub struct JsonSessionPersistenceStore {
     db_filename: PathBuf,
     db_content: tokio::sync::RwLock<SerializedSessionDatabase>,
     spawner: BlockingSpawner,
+    next_id: AtomicUsize,
 }
 
 impl std::fmt::Debug for JsonSessionPersistenceStore {
@@ -48,7 +54,7 @@ impl JsonSessionPersistenceStore {
                 format!("couldn't create directory {output_folder:?} for session storage")
             })?;
 
-        let db = match tokio::fs::File::open(&db_filename).await {
+        let db: SerializedSessionDatabase = match tokio::fs::File::open(&db_filename).await {
             Ok(f) => {
                 let mut buf = Vec::new();
                 let mut rdr = tokio::io::BufReader::new(f);
@@ -62,11 +68,16 @@ impl JsonSessionPersistenceStore {
             }
         };
 
+        let next_id = match db.torrents.keys().max() {
+            Some(id) => id.checked_add(1).context("torrent ID space exhausted")?,
+            None => 0,
+        };
         Ok(Self {
             db_filename,
             output_folder,
             db_content: tokio::sync::RwLock::new(db),
             spawner,
+            next_id: AtomicUsize::new(next_id),
         })
     }
 
@@ -242,16 +253,10 @@ impl BitVFactory for JsonSessionPersistenceStore {
 #[async_trait]
 impl SessionPersistenceStore for JsonSessionPersistenceStore {
     async fn next_id(&self) -> anyhow::Result<TorrentId> {
-        Ok(self
-            .db_content
-            .read()
-            .await
-            .torrents
-            .keys()
-            .copied()
-            .max()
-            .map(|max| max + 1)
-            .unwrap_or(0))
+        // Reserve before asynchronous storage, so simultaneous imports cannot share an ID.
+        self.next_id
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+            .map_err(|_| anyhow::anyhow!("torrent ID space exhausted"))
     }
 
     async fn delete(&self, id: TorrentId) -> anyhow::Result<()> {
@@ -331,5 +336,55 @@ impl SessionPersistenceStore for JsonSessionPersistenceStore {
         torrent: &ManagedTorrentHandle,
     ) -> anyhow::Result<()> {
         self.update_db(id, torrent, false).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{collections::HashSet, sync::Arc};
+
+    #[tokio::test]
+    async fn concurrent_ids_are_reserved_before_storage() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Arc::new(
+            JsonSessionPersistenceStore::new(dir.path().into(), BlockingSpawner::new(1))
+                .await
+                .unwrap(),
+        );
+        let mut tasks = tokio::task::JoinSet::new();
+        for _ in 0..100 {
+            let store = store.clone();
+            tasks.spawn(async move { store.next_id().await.unwrap() });
+        }
+        let mut ids = HashSet::new();
+        while let Some(id) = tasks.join_next().await {
+            assert!(ids.insert(id.unwrap()), "duplicate reserved ID");
+        }
+        assert_eq!(ids.len(), 100);
+        assert_eq!(store.next_id().await.unwrap(), 100);
+    }
+
+    #[tokio::test]
+    async fn ids_start_after_persisted_maximum_and_do_not_wrap() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = serde_json::json!({"torrents": {"42": {
+            "info_hash": "0000000000000000000000000000000000000000",
+            "trackers": [], "output_folder": ".", "only_files": null, "is_paused": true
+        }}});
+        tokio::fs::write(
+            dir.path().join("session.json"),
+            serde_json::to_vec(&db).unwrap(),
+        )
+        .await
+        .unwrap();
+        let store = JsonSessionPersistenceStore::new(dir.path().into(), BlockingSpawner::new(1))
+            .await
+            .unwrap();
+        assert_eq!(store.next_id().await.unwrap(), 43);
+        assert_eq!(store.next_id().await.unwrap(), 44);
+        store.next_id.store(usize::MAX, Ordering::Relaxed);
+        assert!(store.next_id().await.is_err());
+        assert!(store.next_id().await.is_err());
     }
 }
