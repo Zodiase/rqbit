@@ -51,8 +51,9 @@ def valid_reference(ref):
 class SecurityTests(unittest.TestCase):
     def test_packaged_web_assets(self):
         result = subprocess.run(
-            ["cargo", "package", "-p", "librqbit", "--list", "--offline", "--allow-dirty"],
-            cwd=ROOT, capture_output=True, text=True, check=True, timeout=60)
+            ["cargo", "package", "-p", "librqbit", "--list", "--allow-dirty"],
+            cwd=ROOT, capture_output=True, text=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
         selected = set(result.stdout.splitlines())
         assets = ["webui/dist/index.html", "webui/dist/assets/index.js",
                   "webui/dist/assets/index.css", "webui/dist/assets/logo.svg"]

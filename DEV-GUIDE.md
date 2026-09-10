@@ -47,6 +47,8 @@ The security tests inspect Cargo's package file list, execute its asset-checking
 build script, and compile include_str checks against those selected assets in an
 isolated directory. This focused check does not replace a full packaged-crate
 build, which also requires published sibling dependencies.
+Cargo's package listing may resolve registry metadata, so the packaging test
+allows network access and does not assume a pre-populated local Cargo cache.
 
     npm ci --ignore-scripts
     npm run build --workspace rqbit-webui
