@@ -1,6 +1,6 @@
 /**
  * Confirm removal of a stable torrent selection, with optional file deletion.
- * Keep keyboard activation and dismissal on the same guarded paths as clicks.
+ * Native form submission shares one guarded path for keyboard and mouse use.
  */
 import { useContext, useRef, useState } from "react";
 import { TorrentListItem } from "../../api-types";
@@ -87,15 +87,10 @@ export const DeleteTorrentModal: React.FC<{
       onShow={() => confirmRef.current?.focus()}
       title={title}
     >
-      <div
-        onKeyDown={(event) => {
-          // Holding Enter must not activate a newly opened confirmation.
-          if (
-            event.key === "Enter" &&
-            (event.repeat || event.nativeEvent.isComposing)
-          ) {
-            event.preventDefault();
-          }
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void deleteTorrents();
         }}
       >
         <ModalBody>
@@ -147,19 +142,24 @@ export const DeleteTorrentModal: React.FC<{
 
         <ModalFooter>
           {deleting && <Spinner />}
-          <Button variant="cancel" onClick={close} disabled={deleting}>
+          <Button
+            type="button"
+            variant="cancel"
+            onClick={close}
+            disabled={deleting}
+          >
             Cancel
           </Button>
           <Button
             variant="danger"
-            onClick={deleteTorrents}
+            type="submit"
             disabled={deleting}
             ref={confirmRef}
           >
             {isBulk ? `Delete ${torrents.length} Torrents` : "Delete Torrent"}
           </Button>
         </ModalFooter>
-      </div>
+      </form>
     </Modal>
   );
 };

@@ -97,6 +97,9 @@ frontend test infrastructure is tracked in fork issue #6.
    dismissal and changing the file-deletion option are blocked until it settles.
    Verify API errors remain visible and allow retry.
 
+The confirmation is a native form: Delete is a submit button and Cancel is a
+non-submit button. The form submit handler prevents navigation and invokes the
+guarded deletion operation; no modal-specific Enter listener is needed.
 The shared modal uses Restart UI's show lifecycle to focus the confirmation
 after mounting; React autofocus alone can be overridden by the modal container.
 Verify the same keyboard flow in the packaged macOS app before treating native

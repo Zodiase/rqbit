@@ -2,14 +2,24 @@
 import { ReactNode, Ref } from "react";
 
 export const Button: React.FC<{
-  onClick: () => void;
+  onClick?: () => void;
+  type?: "button" | "submit" | "reset";
   variant?: "cancel" | "primary" | "secondary" | "danger" | "none";
   size?: "sm" | "default";
   className?: string;
   disabled?: boolean;
   ref?: Ref<HTMLButtonElement>;
   children: ReactNode;
-}> = ({ onClick, children, className, disabled, ref, variant, size }) => {
+}> = ({
+  onClick,
+  type = "button",
+  children,
+  className,
+  disabled,
+  ref,
+  variant,
+  size,
+}) => {
   const sizeClassNames = {
     sm: "text-sm px-2 py-1",
     default: "px-3 py-1.5",
@@ -30,11 +40,9 @@ export const Button: React.FC<{
   return (
     <button
       ref={ref}
+      type={type}
       disabled={disabled}
-      onClick={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
+      onClick={onClick}
       className={`inline-flex items-center gap-1 border rounded font-medium cursor-pointer disabled:cursor-not-allowed ${sizeClassNames} ${variantClassNames} ${className ?? ""}`}
     >
       {children}
